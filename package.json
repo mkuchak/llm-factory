@@ -1,0 +1,50 @@
+{
+  "name": "llm-factory",
+  "version": "0.1.0",
+  "description": "A standardized factory for working with multiple LLM providers",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:google": "vitest run src/tests/google-provider.test.ts",
+    "test:openai": "vitest run src/tests/openai-provider.test.ts",
+    "test:anthropic": "vitest run src/tests/anthropic-provider.test.ts",
+    "test:factory": "vitest run src/tests/llm-factory.test.ts",
+    "example": "tsx src/examples/basic-usage.ts",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "lint:fix:unsafe": "biome lint --write --unsafe .",
+    "fmt": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "check:fix:unsafe": "biome check --write --unsafe .",
+    "biome:ci": "biome ci ."
+  },
+  "keywords": ["llm", "ai", "openai", "gemini", "claude", "anthropic"],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.24.0",
+    "dotenv": "^16.4.7",
+    "openai": "^4.91.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.14.0",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}
