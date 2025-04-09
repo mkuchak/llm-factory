@@ -7,9 +7,29 @@ LLM Factory is a TypeScript library that provides a unified interface for intera
 - 🔄 **Unified Interface**: Consistent API to interact with different LLMs
 - 🌊 **Streaming Support**: Real-time text generation for interactive experiences
 - 📷 **Multimodal Processing**: Support for text, image, and audio inputs
-- 📊 **Metrics and Cost**: Token tracking and cost estimates
+- 📊 **Metrics and Cost**: Token tracking and cost estimates with support for tiered pricing models
 - 🧵 **Thread-Safe**: Designed to handle multiple concurrent requests
 - 🧩 **Extensible**: Easy to add new LLM providers
+
+## Tiered Pricing Support
+
+LLM Factory provides support for tiered pricing models used by some LLM providers. This allows accurate cost estimation for models like Gemini 2.5 Pro which have different rates based on token thresholds:
+
+- **Standard Pricing**: Fixed rate per million tokens for input and output
+- **Tiered Pricing**: Different rates based on token volume thresholds
+
+For example, Gemini 2.5 Pro uses the following tiered pricing structure:
+```
+Input tokens:
+- $1.25 per million tokens (≤ 200K tokens)
+- $2.50 per million tokens (> 200K tokens)
+
+Output tokens:
+- $10.00 per million tokens (≤ 200K tokens)
+- $15.00 per million tokens (> 200K tokens)
+```
+
+The cost calculator automatically handles tiered pricing, ensuring accurate cost estimates across all supported models and usage levels.
 
 ## Installation
 

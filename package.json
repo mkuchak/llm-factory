@@ -1,7 +1,11 @@
 {
   "name": "llm-factory",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A standardized factory for working with multiple LLM providers",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mkuchak/llm-factory"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -22,6 +26,7 @@
     "test:openai": "vitest run src/tests/openai-provider.test.ts",
     "test:anthropic": "vitest run src/tests/anthropic-provider.test.ts",
     "test:factory": "vitest run src/tests/llm-factory.test.ts",
+    "test:tokens": "vitest run src/tests/tokens.test.ts",
     "example": "tsx src/examples/basic-usage.ts",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -32,7 +37,14 @@
     "check:fix:unsafe": "biome check --write --unsafe .",
     "biome:ci": "biome ci ."
   },
-  "keywords": ["llm", "ai", "openai", "gemini", "claude", "anthropic"],
+  "keywords": [
+    "llm",
+    "ai",
+    "openai",
+    "gemini",
+    "claude",
+    "anthropic"
+  ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.24.0",
@@ -46,5 +58,6 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"
-  }
+  },
+  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0"
 }

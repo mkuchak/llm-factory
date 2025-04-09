@@ -4,8 +4,23 @@ import type { LLMModel } from "../types/models";
  * Pricing per million tokens
  */
 export interface TokenPricing {
-  inputTokens: number; // cost per 1M tokens
-  outputTokens: number; // cost per 1M tokens
+  // Simple fixed pricing
+  inputTokens?: number; // cost per 1M tokens
+  outputTokens?: number; // cost per 1M tokens
+  
+  // Tiered pricing
+  tieredPricing?: {
+    input?: {
+      threshold: number; // token threshold for tier change
+      belowThreshold: number; // cost per 1M tokens below threshold
+      aboveThreshold: number; // cost per 1M tokens above threshold
+    };
+    output?: {
+      threshold: number; // token threshold for tier change
+      belowThreshold: number; // cost per 1M tokens below threshold
+      aboveThreshold: number; // cost per 1M tokens above threshold
+    };
+  };
 }
 
 /**
@@ -28,9 +43,19 @@ export const MODEL_PRICING: Record<LLMModel, TokenPricing> = {
     inputTokens: 0.15,
     outputTokens: 0.6,
   },
-  "gemini-2.5-pro-exp-03-25": {
-    inputTokens: 0.0, // free experimental model
-    outputTokens: 0.0, // free experimental model
+  "gemini-2.5-pro-preview-03-25": {
+    tieredPricing: {
+      input: {
+        threshold: 200_000,
+        belowThreshold: 1.25,
+        aboveThreshold: 2.50,
+      },
+      output: {
+        threshold: 200_000,
+        belowThreshold: 10.0,
+        aboveThreshold: 15.0,
+      }
+    }
   },
   "gemini-2.0-flash": {
     inputTokens: 0.1,
