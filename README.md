@@ -11,6 +11,35 @@ LLM Factory is a TypeScript library that provides a unified interface for intera
 - 🧵 **Thread-Safe**: Designed to handle multiple concurrent requests
 - 🧩 **Extensible**: Easy to add new LLM providers
 
+## Supported Models and Pricing Reference
+
+LLM Factory supports the following models from different providers. The pricing information below is for reference only and may change based on the provider's pricing policies:
+
+| Model | Input Cost ($/1M tokens) | Output Cost ($/1M tokens) | Provider |
+|-------|-------------------------|--------------------------|----------|
+| GPT-4.1 | $2.00 | $8.00 | OpenAI |
+| GPT-4.1 Mini | $0.40 | $1.60 | OpenAI |
+| GPT-4.1 Nano | $0.10 | $0.40 | OpenAI |
+| GPT-4o | $2.50 | $10.00 | OpenAI |
+| GPT-4o Mini | $0.15 | $0.60 | OpenAI |
+| GPT-4o Audio Preview | $2.50 | $10.00 | OpenAI |
+| GPT-4o Mini Audio Preview | $0.15 | $0.60 | OpenAI |
+| Gemini 2.5 Pro Preview | Tiered* | Tiered* | Google |
+| Gemini 2.0 Flash | $0.10 | $0.40 | Google |
+| Gemini 2.0 Flash Lite | $0.075 | $0.30 | Google |
+| Claude 3.7 Sonnet | $3.00 | $15.00 | Anthropic |
+| Claude 3.5 Haiku | $0.80 | $4.00 | Anthropic |
+
+\* Gemini 2.5 Pro uses tiered pricing:
+- Input: $1.25/1M tokens (≤200K), $2.50/1M tokens (>200K)
+- Output: $10.00/1M tokens (≤200K), $15.00/1M tokens (>200K)
+
+> **Note on Model Adaptation and Multimodal Support**: 
+> - **OpenAI**: When using multimodal features (audio, images) with OpenAI models, LLM Factory automatically adapts the model selection. For example, if you specify `gpt-4o` and provide audio input, it will automatically use `gpt-4o-audio-preview`. Similarly, `gpt-4o-mini` will be adapted to `gpt-4o-mini-audio-preview` when audio is provided.
+> - **Anthropic**: Currently, Anthropic's Claude models do not support audio processing capabilities.
+> 
+> This automatic adaptation ensures seamless multimodal support while maintaining a consistent API interface across providers.
+
 ## Tiered Pricing Support
 
 LLM Factory provides support for tiered pricing models used by some LLM providers. This allows accurate cost estimation for models like Gemini 2.5 Pro which have different rates based on token thresholds:
@@ -403,98 +432,3 @@ const { stream, getMetadata } = provider.generateReadableStream({
 // stream: ReadableStream<string>
 // getMetadata: () => Promise<TokenMetadata>
 ```
-
-#### `generateWithCallbacks(params)`
-
-Event-based text generation with callbacks for chunks, completion, and errors.
-
-```typescript
-provider.generateWithCallbacks({
-  model: "model-name",
-  prompt: "Your prompt",
-  // other parameters
-  onChunk: (chunk: string) => void,
-  onComplete: (response: LLMResponse) => void,
-  onError: (error: any) => void,
-});
-```
-
-## Architecture
-
-The library is built around a common `LLMProviderInterface` that all providers implement:
-
-- `LLMFactory`: Main entry point that automatically selects providers based on model names
-- `BaseLLMProvider`: Abstract class with common implementations
-  - `GoogleProvider`: Google Gemini implementation
-  - `OpenAIProvider`: OpenAI GPT implementation
-  - `AnthropicProvider`: Anthropic Claude implementation
-  - (Other providers can be added following the same pattern)
-
-## Supported Providers
-
-| Provider | Supported Models | Features |
-|----------|-------------------|----------|
-| Google   | gemini-2.0-flash, gemini-2.0-pro, ... | Text, Images, Audio |
-| OpenAI   | gpt-4o, gpt-4o-mini, gpt-3.5-turbo, ... | Text, Images |
-| Anthropic | claude-3-7-sonnet, claude-3-5-haiku, ... | Text, Images |
-
-## Extending with New Providers
-
-To add a new provider, create a new class that extends `BaseLLMProvider` and implement the abstract methods:
-
-```typescript
-import { BaseLLMProvider, TokenMetadata } from 'llm-factory';
-
-export class NewProvider extends BaseLLMProvider {
-  protected DEFAULT_MODEL = "default-model-name";
-  
-  constructor(apiKey?: string) {
-    super(apiKey);
-    this.initClient();
-  }
-  
-  protected initClient(): void {
-    // Initialize the provider client
-  }
-  
-  protected checkClientInitialized(): void {
-    // Check if client is initialized
-  }
-  
-  protected buildContentParts(params: BaseGenerateParams): any {
-    // Process content (text, images, audio)
-  }
-  
-  protected async makeGenerationRequest(params: BaseGenerateParams): Promise<any> {
-    // Implement provider API call
-  }
-  
-  protected async makeStreamingRequest(params: BaseGenerateParams): Promise<any> {
-    // Implement provider streaming API call
-  }
-  
-  protected extractTextFromResponse(response: any): string {
-    // Extract text from API response
-  }
-  
-  protected extractMetadataFromResponse(response: any, modelName: string): TokenMetadata {
-    // Extract metadata from API response
-  }
-  
-  protected async createMetadataPromiseFromStream(streamResult: any, modelName: string): Promise<TokenMetadata> {
-    // Create a promise that resolves with metadata from the stream
-  }
-  
-  protected extractTextChunksFromStream(streamResult: any): AsyncIterable<string> {
-    // Extract text chunks from the stream
-  }
-}
-```
-
-## Contributions
-
-Contributions are welcome! Feel free to open issues or pull requests.
-
-## License
-
-MIT 

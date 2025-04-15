@@ -26,7 +26,7 @@ describe("OpenAIProvider", () => {
 
   skipTest("should generate text correctly", async () => {
     const response = await provider.generate({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       prompt: "What are LLMs? Answer in just one sentence.",
       temperature: 0.7,
     });
@@ -47,7 +47,7 @@ describe("OpenAIProvider", () => {
     let finalResponse: any;
 
     await provider.generateWithCallbacks({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       prompt: "What are LLMs? Answer in just one sentence.",
       temperature: 0.7,
       onChunk: (chunk) => {
@@ -75,7 +75,7 @@ describe("OpenAIProvider", () => {
 
   skipTest("should generate text stream with metadata correctly", async () => {
     const { stream, getMetadata } = provider.generateStream({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       prompt: "What are LLMs? Answer in just one sentence.",
       temperature: 0.7,
     });
@@ -99,7 +99,7 @@ describe("OpenAIProvider", () => {
 
   skipTest("should generate readable stream correctly", async () => {
     const { stream: readableStream, getMetadata } = provider.generateReadableStream({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       prompt: "What are LLMs? Answer in just one sentence.",
       temperature: 0.7,
     });
@@ -150,7 +150,7 @@ describe("OpenAIProvider", () => {
 
     // Generate response with image
     const response = await provider.generate({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       prompt: "Extract all text visible in this image. Format the text exactly as it appears.",
       image: imageBase64,
       temperature: 0.2,
@@ -163,7 +163,7 @@ describe("OpenAIProvider", () => {
     expect(response.text).toBeTruthy();
     expect(response.text.length).toBeGreaterThan(50); // Should extract substantial text
     expect(response.metadata).toBeDefined();
-    expect(response.metadata.model).toBe("gpt-4o-mini");
+    expect(response.metadata.model).toBe("gpt-4.1-mini");
     expect(response.metadata.inputTokens).toBeGreaterThan(0);
     expect(response.metadata.outputTokens).toBeGreaterThan(0);
     expect(response.metadata.cost).toBeGreaterThan(0);
@@ -181,7 +181,7 @@ describe("OpenAIProvider", () => {
 
     // Generate response with audio
     const response = await provider.generate({
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       prompt:
         "Transcribe the following audio file completely and accurately. Include any speaker identifications if possible.",
       audio: audioBase64,
@@ -195,7 +195,7 @@ describe("OpenAIProvider", () => {
     expect(response.text).toBeTruthy();
     expect(response.text.length).toBeGreaterThan(50); // Should extract substantial text
     expect(response.metadata).toBeDefined();
-    expect(response.metadata.model).toBe("gpt-4o-mini");
+    expect(response.metadata.model).toBe("gpt-4.1-mini");
     expect(response.metadata.inputTokens).toBeGreaterThan(0);
     expect(response.metadata.outputTokens).toBeGreaterThan(0);
     expect(response.metadata.cost).toBeGreaterThan(0);

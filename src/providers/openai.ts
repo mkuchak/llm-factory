@@ -101,6 +101,12 @@ export class OpenAIProvider extends BaseLLMProvider {
         model = "gpt-4o-audio-preview";
       } else if (model === "gpt-4o-mini") {
         model = "gpt-4o-mini-audio-preview";
+      } else if (model === "gpt-4.1") {
+        model = "gpt-4o-audio-preview";
+      } else if (model === "gpt-4.1-mini") {
+        model = "gpt-4o-mini-audio-preview";
+      } else if (model === "gpt-4.1-nano") {
+        model = "gpt-4o-mini-audio-preview";
       }
     }
 

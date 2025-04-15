@@ -27,6 +27,18 @@ export interface TokenPricing {
  * Model pricing in USD per million tokens
  */
 export const MODEL_PRICING: Record<LLMModel, TokenPricing> = {
+  "gpt-4.1": {
+    inputTokens: 2.00,
+    outputTokens: 8.00,
+  },
+  "gpt-4.1-mini": {
+    inputTokens: 0.40,
+    outputTokens: 1.60,
+  },
+  "gpt-4.1-nano": {
+    inputTokens: 0.10,
+    outputTokens: 0.40,
+  },
   "gpt-4o": {
     inputTokens: 2.5,
     outputTokens: 10.0,
