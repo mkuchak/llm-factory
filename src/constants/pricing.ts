@@ -69,6 +69,10 @@ export const MODEL_PRICING: Record<LLMModel, TokenPricing> = {
       }
     }
   },
+  "gemini-2.5-flash-preview-04-17": {
+    inputTokens: 0.15,
+    outputTokens: 0.60,
+  },
   "gemini-2.0-flash": {
     inputTokens: 0.1,
     outputTokens: 0.4,
@@ -78,6 +82,10 @@ export const MODEL_PRICING: Record<LLMModel, TokenPricing> = {
     outputTokens: 0.3,
   },
   "claude-3-7-sonnet-latest": {
+    inputTokens: 3.0,
+    outputTokens: 15.0,
+  },
+  "claude-3-5-sonnet-latest": {
     inputTokens: 3.0,
     outputTokens: 15.0,
   },

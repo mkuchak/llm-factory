@@ -12,10 +12,12 @@ export type LLMModel =
   | "gpt-4o-mini-audio-preview"
   // Google models
   | "gemini-2.5-pro-preview-03-25"
+  | "gemini-2.5-flash-preview-04-17"
   | "gemini-2.0-flash"
   | "gemini-2.0-flash-lite"
   // Anthropic models
   | "claude-3-7-sonnet-latest"
+  | "claude-3-5-sonnet-latest"
   | "claude-3-5-haiku-latest";
 
 /**
@@ -35,8 +37,10 @@ export const MODEL_PROVIDER_MAP: Record<LLMModel, LLMProvider> = {
   "gpt-4o-audio-preview": "openai",
   "gpt-4o-mini-audio-preview": "openai",
   "gemini-2.5-pro-preview-03-25": "google",
+  "gemini-2.5-flash-preview-04-17": "google",
   "gemini-2.0-flash": "google",
   "gemini-2.0-flash-lite": "google",
   "claude-3-7-sonnet-latest": "anthropic",
+  "claude-3-5-sonnet-latest": "anthropic",
   "claude-3-5-haiku-latest": "anthropic",
 };

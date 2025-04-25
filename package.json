@@ -1,6 +1,6 @@
 {
   "name": "llm-factory",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A standardized factory for working with multiple LLM providers",
   "repository": {
     "type": "git",
@@ -46,18 +46,18 @@
     "anthropic"
   ],
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.40.0",
     "@google/generative-ai": "^0.24.0",
     "dotenv": "^16.5.0",
-    "openai": "^4.94.0"
+    "openai": "^4.96.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.2",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0"
 }

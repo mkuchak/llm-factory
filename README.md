@@ -25,9 +25,11 @@ LLM Factory supports the following models from different providers. The pricing 
 | GPT-4o Audio Preview | $2.50 | $10.00 | OpenAI |
 | GPT-4o Mini Audio Preview | $0.15 | $0.60 | OpenAI |
 | Gemini 2.5 Pro Preview | Tiered* | Tiered* | Google |
+| Gemini 2.5 Flash Preview | $0.15 | $0.60 | Google |
 | Gemini 2.0 Flash | $0.10 | $0.40 | Google |
 | Gemini 2.0 Flash Lite | $0.075 | $0.30 | Google |
 | Claude 3.7 Sonnet | $3.00 | $15.00 | Anthropic |
+| Claude 3.5 Sonnet | $3.00 | $15.00 | Anthropic |
 | Claude 3.5 Haiku | $0.80 | $4.00 | Anthropic |
 
 \* Gemini 2.5 Pro uses tiered pricing:
@@ -39,26 +41,6 @@ LLM Factory supports the following models from different providers. The pricing 
 > - **Anthropic**: Currently, Anthropic's Claude models do not support audio processing capabilities.
 > 
 > This automatic adaptation ensures seamless multimodal support while maintaining a consistent API interface across providers.
-
-## Tiered Pricing Support
-
-LLM Factory provides support for tiered pricing models used by some LLM providers. This allows accurate cost estimation for models like Gemini 2.5 Pro which have different rates based on token thresholds:
-
-- **Standard Pricing**: Fixed rate per million tokens for input and output
-- **Tiered Pricing**: Different rates based on token volume thresholds
-
-For example, Gemini 2.5 Pro uses the following tiered pricing structure:
-```
-Input tokens:
-- $1.25 per million tokens (≤ 200K tokens)
-- $2.50 per million tokens (> 200K tokens)
-
-Output tokens:
-- $10.00 per million tokens (≤ 200K tokens)
-- $15.00 per million tokens (> 200K tokens)
-```
-
-The cost calculator automatically handles tiered pricing, ensuring accurate cost estimates across all supported models and usage levels.
 
 ## Installation
 
@@ -80,9 +62,9 @@ GEMINI_API_KEY=your-gemini-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
-## Simplified API with LLMFactory
+## Usage
 
-The main advantage of LLM Factory is its unified interface through the `LLMFactory` class, which automatically handles provider selection based on the model:
+### Initialize the LLMFactory
 
 ```typescript
 import { LLMFactory } from 'llm-factory';
@@ -93,8 +75,11 @@ const llmFactory = new LLMFactory({
   googleApiKey: process.env.GEMINI_API_KEY,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
 });
+```
 
-// Now you can use any model without worrying about the underlying provider
+### Basic Text Generation
+
+```typescript
 async function generateWithAnyModel() {
   // Using OpenAI
   const openaiResponse = await llmFactory.generate({
@@ -121,8 +106,20 @@ async function generateWithAnyModel() {
   console.log("Gemini response:", geminiResponse.text);
   console.log("Claude response:", claudeResponse.text);
 }
+```
 
-// Streaming with any model is just as easy
+### Model Availability Check
+
+```typescript
+// Check if a model is available before using it
+if (llmFactory.isModelAvailable("gpt-4o")) {
+  console.log("GPT-4o is available for use");
+}
+```
+
+### Streaming Support
+
+```typescript
 async function streamWithAnyModel(model: string, prompt: string) {
   const { stream, getMetadata } = llmFactory.generateStream({
     model,
@@ -139,13 +136,11 @@ async function streamWithAnyModel(model: string, prompt: string) {
   const metadata = await getMetadata();
   console.log("\nCost:", metadata.cost);
 }
+```
 
-// Check if a model is available before using it
-if (llmFactory.isModelAvailable("gpt-4o")) {
-  console.log("GPT-4o is available for use");
-}
+### Callback-Based Generation
 
-// Use callbacks with any model
+```typescript
 function generateWithCallbacks(model: string, prompt: string) {
   llmFactory.generateWithCallbacks({
     model,
@@ -163,8 +158,11 @@ function generateWithCallbacks(model: string, prompt: string) {
     },
   });
 }
+```
 
-// For web applications, get a standard ReadableStream
+### Web ReadableStream Support
+
+```typescript
 async function getWebStream(model: string, prompt: string) {
   const { stream } = llmFactory.generateReadableStream({
     model,
@@ -183,130 +181,17 @@ async function getWebStream(model: string, prompt: string) {
 }
 ```
 
-## Direct Provider Usage
-
-If you prefer to work with specific providers directly, you can also use them individually:
-
-### Basic Text Generation
-
-```typescript
-import { GoogleProvider, OpenAIProvider, AnthropicProvider } from 'llm-factory';
-
-// Choose one provider to use
-const provider = new GoogleProvider();
-// const provider = new OpenAIProvider();
-// const provider = new AnthropicProvider();
-
-// Generate text using the selected provider
-async function generateText() {
-  const response = await provider.generate({
-    model: "gemini-2.0-flash-lite", // Use the appropriate model for your chosen provider
-    prompt: "Explain the concept of LLMs in simple terms",
-    temperature: 0.7,
-    maxTokens: 100,
-  });
-  
-  console.log(response.text);
-  console.log("Input tokens:", response.metadata.inputTokens);
-  console.log("Output tokens:", response.metadata.outputTokens);
-  console.log("Estimated cost:", response.metadata.cost);
-}
-
-// Or use each provider for different purposes
-async function useMultipleProviders() {
-  const openaiProvider = new OpenAIProvider();
-  const geminiProvider = new GoogleProvider();
-  const claudeProvider = new AnthropicProvider();
-  
-  // Use OpenAI for creative tasks
-  const storyResponse = await openaiProvider.generate({
-    model: "gpt-4o-mini",
-    prompt: "Write a short sci-fi story",
-    temperature: 0.9,
-  });
-  
-  // Use Gemini for image analysis
-  const imageResponse = await geminiProvider.generate({
-    model: "gemini-2.0-flash",
-    prompt: "Describe what's in this image",
-    image: imageBase64, // Base64-encoded image
-    temperature: 0.2,
-  });
-  
-  // Use Claude for factual responses
-  const factResponse = await claudeProvider.generate({
-    model: "claude-3-5-haiku-latest",
-    prompt: "Explain quantum computing principles",
-    temperature: 0.1,
-  });
-}
-```
-
-### Text Streaming
-
-```typescript
-import { GoogleProvider } from 'llm-factory';
-
-const provider = new GoogleProvider();
-
-async function streamText() {
-  const { stream, getMetadata } = provider.generateStream({
-    model: "gemini-2.0-flash-lite",
-    prompt: "Write a short story about AI",
-    temperature: 0.9,
-    maxTokens: 500,
-  });
-  
-  // Consume the text stream
-  for await (const chunk of stream) {
-    process.stdout.write(chunk); // or add to UI in real-time
-  }
-  
-  // Retrieve metadata after the stream completes
-  const metadata = await getMetadata();
-  console.log("\nMetadata:", metadata);
-}
-```
-
-### Generation with Callbacks
-
-```typescript
-import { AnthropicProvider } from 'llm-factory';
-
-const provider = new AnthropicProvider();
-
-function generateWithCallbacks() {
-  provider.generateWithCallbacks({
-    model: "claude-3-5-haiku-latest",
-    prompt: "What are the AI trends for 2024?",
-    maxTokens: 200,
-    onChunk: (chunk) => {
-      process.stdout.write(chunk);
-    },
-    onComplete: (response) => {
-      console.log("\nComplete response:", response);
-    },
-    onError: (error) => {
-      console.error("Generation error:", error);
-    }
-  });
-}
-```
-
 ### Image Processing (OCR)
 
 ```typescript
 import fs from 'fs';
-import { GoogleProvider } from 'llm-factory';
-
-const provider = new GoogleProvider();
 
 async function processImage() {
   // Load an image as base64
   const imageBase64 = fs.readFileSync('path/to/image.jpg', { encoding: 'base64' });
   
-  const response = await provider.generate({
-    model: "gemini-2.0-flash-lite",
+  const response = await llmFactory.generate({
+    model: "gemini-2.0-flash-lite", // Gemini models work well with images
     prompt: "Extract all visible text in this image",
     image: imageBase64,
     temperature: 0.2,
@@ -316,30 +201,32 @@ async function processImage() {
 }
 ```
 
-### ReadableStream for Web Environments
+### Multimodal Use Cases
 
 ```typescript
-import { OpenAIProvider } from 'llm-factory';
-
-const provider = new OpenAIProvider();
-
-async function getReadableStream() {
-  const { stream, getMetadata } = provider.generateReadableStream({
+// Using specific providers for different purposes
+async function useMultimodalCapabilities() {
+  // Creative tasks with OpenAI
+  const storyResponse = await llmFactory.generate({
     model: "gpt-4o-mini",
-    prompt: "Explain quantum computing",
-    temperature: 0.3,
+    prompt: "Write a short sci-fi story",
+    temperature: 0.9,
   });
   
-  // Use with fetch Response or HTML SSE
-  return new Response(stream);
+  // Image analysis with Gemini
+  const imageResponse = await llmFactory.generate({
+    model: "gemini-2.0-flash", // Gemini is optimized for image understanding
+    prompt: "Describe what's in this image",
+    image: imageBase64, // Base64-encoded image
+    temperature: 0.2,
+  });
   
-  // Or consume manually
-  const reader = stream.getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    console.log(value); // chunk of text
-  }
+  // Factual responses with Claude
+  const factResponse = await llmFactory.generate({
+    model: "claude-3-5-haiku-latest", // Claude models are strong on factual responses
+    prompt: "Explain quantum computing principles",
+    temperature: 0.1,
+  });
 }
 ```
 
@@ -360,41 +247,22 @@ The library provides a consistent API across all providers:
 
 ### LLMFactory Methods
 
-The LLMFactory provides the same methods as individual providers but with automatic provider selection:
+The LLMFactory provides these core methods with automatic provider selection:
 
-```typescript
-const llmFactory = new LLMFactory({
-  openaiApiKey: '...',
-  googleApiKey: '...',
-  anthropicApiKey: '...',
-});
+- `isModelAvailable(modelName)`: Check if a model is available
+- `generate(params)`: Synchronous text generation
+- `generateStream(params)`: Asynchronous streaming text generation
+- `generateWithCallbacks(params)`: Generation with callback functions
+- `generateReadableStream(params)`: Generate with web ReadableStream
 
-// Check model availability
-const isAvailable = llmFactory.isModelAvailable(modelName);
-
-// Generate text
-const response = await llmFactory.generate(params);
-
-// Generate streaming text
-const { stream, getMetadata } = llmFactory.generateStream(params);
-
-// Generate with callbacks
-llmFactory.generateWithCallbacks(params);
-
-// Generate with web ReadableStream
-const { stream, getMetadata } = llmFactory.generateReadableStream(params);
-```
-
-### Provider Methods
-
-Each provider implements these core methods:
+### Response Types
 
 #### `generate(params)`
 
 Synchronous text generation that returns a complete response.
 
 ```typescript
-const response = await provider.generate({
+const response = await llmFactory.generate({
   model: "model-name",
   prompt: "Your prompt",
   // other parameters
@@ -408,7 +276,7 @@ const response = await provider.generate({
 Asynchronous text generation that returns a stream of text chunks and metadata.
 
 ```typescript
-const { stream, getMetadata } = provider.generateStream({
+const { stream, getMetadata } = llmFactory.generateStream({
   model: "model-name",
   prompt: "Your prompt",
   // other parameters
@@ -423,7 +291,7 @@ const { stream, getMetadata } = provider.generateStream({
 Similar to generateStream but returns a standard web ReadableStream.
 
 ```typescript
-const { stream, getMetadata } = provider.generateReadableStream({
+const { stream, getMetadata } = llmFactory.generateReadableStream({
   model: "model-name",
   prompt: "Your prompt",
   // other parameters
