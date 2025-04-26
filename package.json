@@ -1,6 +1,6 @@
 {
   "name": "llm-factory",
-  "version": "0.5.4",
+  "version": "0.5.6",
   "description": "A standardized factory for working with multiple LLM providers",
   "repository": {
     "type": "git",
@@ -51,6 +51,10 @@
     "@google/generative-ai": "^0.24.0",
     "dotenv": "^16.5.0",
     "openai": "^4.96.0",
+    "zod": "^3.24.3",
+    "zod-to-json-schema": "^3.24.5"
+  },
+  "peerDependencies": {
     "zod": "^3.24.3",
     "zod-to-json-schema": "^3.24.5"
   },
