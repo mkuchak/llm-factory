@@ -77,6 +77,9 @@ const llmFactory = new LLMFactory({
   googleApiKey: process.env.GEMINI_API_KEY,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// Or just use standard environment variables
+const llmFactory = new LLMFactory();
 ```
 
 ### Basic Text Generation
@@ -235,15 +238,11 @@ async function useMultimodalCapabilities() {
 ### Structured Output
 
 ```typescript
-import { LLMFactory, z } from "llm-factory";
+import { LLMFactory } from "llm-factory";
+import { z } from "zod";
 
 async function generateStructuredData() {
-  const llmFactory = new LLMFactory({
-    openaiApiKey: process.env.OPENAI_API_KEY,
-    // Or use Google or Anthropic
-    // googleApiKey: process.env.GEMINI_API_KEY,
-    // anthropicApiKey: process.env.ANTHROPIC_API_KEY,
-  });
+  const llmFactory = new LLMFactory();
 
   // Define a schema for the structured output
   const productSchema = z.object({

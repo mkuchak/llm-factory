@@ -22,9 +22,14 @@ import {
 /**
  * Convert fields with descriptions
  */
-function convertFieldsWithDescriptions(fields: Record<string, ZodSchema<any>>): Record<string, any> {
-  return Object.fromEntries(
+function convertFieldsWithDescriptions(fields: Record<string, ZodSchema<any>>): { 
+  convertedFields: Record<string, any>;
+  propertyOrder: string[];
+} {
+  const propertyOrder: string[] = [];
+  const convertedFields = Object.fromEntries(
     Object.entries(fields).map(([key, value]) => {
+      propertyOrder.push(key);
       const fieldDescription = (value as any)._def.description;
       const converted = convertToGeminiSchema(value);
 
@@ -35,6 +40,8 @@ function convertFieldsWithDescriptions(fields: Record<string, ZodSchema<any>>): 
       return [key, converted];
     })
   );
+
+  return { convertedFields, propertyOrder };
 }
 
 /**
@@ -67,10 +74,11 @@ export function convertToGeminiSchema(schema: ZodSchema<any>): any {
 
   // Object handling
   if (schema instanceof ZodObject) {
-    const convertedShape = convertFieldsWithDescriptions(schema.shape);
+    const { convertedFields, propertyOrder } = convertFieldsWithDescriptions(schema.shape);
     const result: any = {
       type: "object",
-      properties: convertedShape,
+      properties: convertedFields,
+      propertyOrdering: propertyOrder,
       required: Object.keys(schema.shape).filter((key) => !(schema.shape[key] instanceof ZodOptional)),
     };
 

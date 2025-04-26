@@ -51,9 +51,9 @@ describe("Structured Output", () => {
     organizer: z.string().describe("Name of the event organizer"),
   });
 
-  skipGoogleTest("should generate structured output with Google/Gemini", async () => {
+  skipGoogleTest.only("should generate structured output with Google/Gemini", async () => {
     const response = await factory.generate({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-preview-04-17",
       prompt: "Create product information for a new high-end smartphone",
       outputSchema: productSchema,
     });
