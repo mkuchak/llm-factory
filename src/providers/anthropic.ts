@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { LLMModel } from "../types/models";
 import type { BaseGenerateParams } from "../types/params";
@@ -119,8 +118,13 @@ export class AnthropicProvider extends BaseLLMProvider {
    * Make a request for structured output using tools
    */
   private async makeStructuredRequest(params: BaseGenerateParams, model: string, messages: any[]): Promise<any> {
+    // Make sure outputSchema exists
+    if (!params.outputSchema) {
+      throw new Error("outputSchema is required for structured output");
+    }
+    
     // Convert Zod schema to JSON Schema
-    const jsonSchema = zodToJsonSchema(params.outputSchema as z.ZodType, "schema");
+    const jsonSchema = zodToJsonSchema(params.outputSchema, "schema");
     const schemaDefinition = jsonSchema.definitions?.schema;
     
     if (!schemaDefinition) {

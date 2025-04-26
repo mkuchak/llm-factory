@@ -26,6 +26,3 @@ export {
   GoogleProvider,
   AnthropicProvider,
 } from "./providers";
-
-// Export zod for schema creation convenience
-export { z } from "zod";

@@ -1,6 +1,6 @@
 import type { LLMModel } from "./models";
 import type { StreamCallback, StreamCompleteCallback, StreamErrorCallback } from "./responses";
-import { z } from "zod";
+import type { ZodSchema } from "zod";
 
 /**
  * Base parameters for all generation methods
@@ -8,7 +8,7 @@ import { z } from "zod";
 export interface BaseGenerateParams {
   model: LLMModel;
   prompt: string;
-  outputSchema?: z.ZodType; // Schema for structured output (Zod schema)
+  outputSchema?: ZodSchema<any>; // Schema for structured output (Zod schema)
   temperature?: number;
   maxTokens?: number;
   image?: string | string[]; // base64 encoded images

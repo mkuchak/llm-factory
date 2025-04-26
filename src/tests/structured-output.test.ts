@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 import { describe, expect, it } from "vitest";
-import { GoogleProvider } from "../providers/google";
-import { OpenAIProvider } from "../providers/openai";
-import { AnthropicProvider } from "../providers/anthropic";
+import { LLMFactory } from "../llm-factory";
 import { z } from "zod";
 
 // Load environment variables
@@ -17,6 +15,9 @@ const skipOpenAITest = hasOpenAIApiKey ? it : it.skip;
 const skipAnthropicTest = hasAnthropicApiKey ? it : it.skip;
 
 describe("Structured Output", () => {
+  // Create a factory instance once for all tests
+  const factory = new LLMFactory();
+
   // Define a common test schema to use with all providers
   const productSchema = z.object({
     name: z.string().describe("Product name"),
@@ -51,10 +52,7 @@ describe("Structured Output", () => {
   });
 
   skipGoogleTest("should generate structured output with Google/Gemini", async () => {
-    const provider = new GoogleProvider();
-    
-    // Generate structured output using schema
-    const response = await provider.generate({
+    const response = await factory.generate({
       model: "gemini-2.0-flash",
       prompt: "Create product information for a new high-end smartphone",
       outputSchema: productSchema,
@@ -65,31 +63,31 @@ describe("Structured Output", () => {
 
     // Parse and validate the response
     const parsedResponse = JSON.parse(response.text);
-    
+
     // Validate basic structure
     expect(parsedResponse).toHaveProperty("name");
     expect(parsedResponse).toHaveProperty("price");
     expect(parsedResponse).toHaveProperty("description");
     expect(parsedResponse).toHaveProperty("features");
     expect(parsedResponse).toHaveProperty("inStock");
-    
+
     // Validate types
     expect(typeof parsedResponse.name).toBe("string");
     expect(typeof parsedResponse.price).toBe("number");
     expect(typeof parsedResponse.description).toBe("string");
     expect(Array.isArray(parsedResponse.features)).toBe(true);
     expect(typeof parsedResponse.inStock).toBe("boolean");
-    
+
     // Validate content
     expect(parsedResponse.name.length).toBeGreaterThan(0);
     expect(parsedResponse.price).toBeGreaterThan(0);
     expect(parsedResponse.description.length).toBeGreaterThan(10);
     expect(parsedResponse.features.length).toBeGreaterThan(0);
-    
+
     // Validate against schema
     const validatedResponse = productSchema.parse(parsedResponse);
     expect(validatedResponse).toBeDefined();
-    
+
     // Validate token metadata
     expect(response.metadata).toBeDefined();
     expect(response.metadata.model).toBeTruthy();
@@ -99,10 +97,7 @@ describe("Structured Output", () => {
   });
 
   skipOpenAITest("should generate structured output with OpenAI", async () => {
-    const provider = new OpenAIProvider();
-    
-    // Generate structured output using schema
-    const response = await provider.generate({
+    const response = await factory.generate({
       model: "gpt-4o-mini",
       prompt: "Create product information for a new high-end smartphone",
       outputSchema: productSchema,
@@ -113,31 +108,31 @@ describe("Structured Output", () => {
 
     // Parse and validate the response
     const parsedResponse = JSON.parse(response.text);
-    
+
     // Validate basic structure
     expect(parsedResponse).toHaveProperty("name");
     expect(parsedResponse).toHaveProperty("price");
     expect(parsedResponse).toHaveProperty("description");
     expect(parsedResponse).toHaveProperty("features");
     expect(parsedResponse).toHaveProperty("inStock");
-    
+
     // Validate types
     expect(typeof parsedResponse.name).toBe("string");
     expect(typeof parsedResponse.price).toBe("number");
     expect(typeof parsedResponse.description).toBe("string");
     expect(Array.isArray(parsedResponse.features)).toBe(true);
     expect(typeof parsedResponse.inStock).toBe("boolean");
-    
+
     // Validate content
     expect(parsedResponse.name.length).toBeGreaterThan(0);
     expect(parsedResponse.price).toBeGreaterThan(0);
     expect(parsedResponse.description.length).toBeGreaterThan(10);
     expect(parsedResponse.features.length).toBeGreaterThan(0);
-    
+
     // Validate against schema
     const validatedResponse = productSchema.parse(parsedResponse);
     expect(validatedResponse).toBeDefined();
-    
+
     // Validate token metadata
     expect(response.metadata).toBeDefined();
     expect(response.metadata.model).toBeTruthy();
@@ -147,10 +142,7 @@ describe("Structured Output", () => {
   });
 
   skipAnthropicTest("should generate structured output with Anthropic", async () => {
-    const provider = new AnthropicProvider();
-    
-    // Generate structured output using schema
-    const response = await provider.generate({
+    const response = await factory.generate({
       model: "claude-3-5-haiku-latest",
       prompt: "Create product information for a new high-end smartphone",
       outputSchema: productSchema,
@@ -161,31 +153,31 @@ describe("Structured Output", () => {
 
     // Parse and validate the response
     const parsedResponse = JSON.parse(response.text);
-    
+
     // Validate basic structure
     expect(parsedResponse).toHaveProperty("name");
     expect(parsedResponse).toHaveProperty("price");
     expect(parsedResponse).toHaveProperty("description");
     expect(parsedResponse).toHaveProperty("features");
     expect(parsedResponse).toHaveProperty("inStock");
-    
+
     // Validate types
     expect(typeof parsedResponse.name).toBe("string");
     expect(typeof parsedResponse.price).toBe("number");
     expect(typeof parsedResponse.description).toBe("string");
     expect(Array.isArray(parsedResponse.features)).toBe(true);
     expect(typeof parsedResponse.inStock).toBe("boolean");
-    
+
     // Validate content
     expect(parsedResponse.name.length).toBeGreaterThan(0);
     expect(parsedResponse.price).toBeGreaterThan(0);
     expect(parsedResponse.description.length).toBeGreaterThan(10);
     expect(parsedResponse.features.length).toBeGreaterThan(0);
-    
+
     // Validate against schema
     const validatedResponse = productSchema.parse(parsedResponse);
     expect(validatedResponse).toBeDefined();
-    
+
     // Validate token metadata
     expect(response.metadata).toBeDefined();
     expect(response.metadata.model).toBeTruthy();
@@ -197,18 +189,16 @@ describe("Structured Output", () => {
   // ADDITIONAL TESTS USING DIFFERENT METHODS
 
   skipGoogleTest("should generate structured output with Google/Gemini using generateWithCallbacks", async () => {
-    const provider = new GoogleProvider();
-    
     // Initialize test control variables
     let receivedChunk = false;
     let receivedComplete = false;
     let errorOccurred = false;
     let responseJson: any = null;
     let responseMetadata: any = null;
-    
-    // Use the provider with callbacks
+
+    // Use the factory with callbacks
     await new Promise<void>((resolve) => {
-      provider.generateWithCallbacks({
+      factory.generateWithCallbacks({
         model: "gemini-2.0-flash",
         prompt: "Create a recipe for a delicious pasta dish",
         outputSchema: recipeSchema,
@@ -235,12 +225,12 @@ describe("Structured Output", () => {
         },
       });
     });
-    
+
     // Validate the callbacks fired properly
     expect(errorOccurred).toBe(false);
     expect(receivedChunk).toBe(true);
     expect(receivedComplete).toBe(true);
-    
+
     // Validate the response structure
     expect(responseJson).not.toBeNull();
     expect(responseJson).toHaveProperty("title");
@@ -251,7 +241,7 @@ describe("Structured Output", () => {
     expect(responseJson).toHaveProperty("ingredients");
     expect(responseJson).toHaveProperty("instructions");
     expect(responseJson).toHaveProperty("isVegetarian");
-    
+
     // Validate types
     expect(typeof responseJson.title).toBe("string");
     expect(typeof responseJson.preparationTime).toBe("number");
@@ -261,14 +251,14 @@ describe("Structured Output", () => {
     expect(Array.isArray(responseJson.ingredients)).toBe(true);
     expect(Array.isArray(responseJson.instructions)).toBe(true);
     expect(typeof responseJson.isVegetarian).toBe("boolean");
-    
+
     // Validate content
     expect(responseJson.title.length).toBeGreaterThan(0);
     expect(responseJson.preparationTime).toBeGreaterThan(0);
     expect(responseJson.cookingTime).toBeGreaterThan(0);
     expect(responseJson.ingredients.length).toBeGreaterThan(0);
     expect(responseJson.instructions.length).toBeGreaterThan(0);
-    
+
     // Validate metadata
     expect(responseMetadata).toBeDefined();
     expect(responseMetadata.model).toBeTruthy();
@@ -278,24 +268,22 @@ describe("Structured Output", () => {
   });
 
   skipOpenAITest("should generate structured output with OpenAI using generateStream", async () => {
-    const provider = new OpenAIProvider();
-    
-    // Use the streaming interface
-    const { stream, getMetadata } = provider.generateStream({
+    // Use the factory's streaming interface
+    const { stream, getMetadata } = factory.generateStream({
       model: "gpt-4o-mini",
       prompt: "Create a detailed recipe for chocolate chip cookies",
       outputSchema: recipeSchema,
     });
-    
+
     // Collect all chunks
     const chunks: string[] = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
     }
-    
+
     // Get the metadata after streaming
     const metadata = await getMetadata();
-    
+
     // Combine chunks and parse as JSON
     let fullResponse = "";
     if (chunks.length === 1) {
@@ -305,10 +293,10 @@ describe("Structured Output", () => {
       // But we might get it in multiple chunks
       fullResponse = chunks.join("");
     }
-    
+
     // Parse the JSON response
     const responseJson = JSON.parse(fullResponse);
-    
+
     // Validate the response structure
     expect(responseJson).toHaveProperty("title");
     expect(responseJson).toHaveProperty("preparationTime");
@@ -318,7 +306,7 @@ describe("Structured Output", () => {
     expect(responseJson).toHaveProperty("ingredients");
     expect(responseJson).toHaveProperty("instructions");
     expect(responseJson).toHaveProperty("isVegetarian");
-    
+
     // Validate types
     expect(typeof responseJson.title).toBe("string");
     expect(typeof responseJson.preparationTime).toBe("number");
@@ -328,18 +316,18 @@ describe("Structured Output", () => {
     expect(Array.isArray(responseJson.ingredients)).toBe(true);
     expect(Array.isArray(responseJson.instructions)).toBe(true);
     expect(typeof responseJson.isVegetarian).toBe("boolean");
-    
+
     // Validate content
     expect(responseJson.title.length).toBeGreaterThan(0);
     expect(responseJson.preparationTime).toBeGreaterThan(0);
     expect(responseJson.cookingTime).toBeGreaterThan(0);
     expect(responseJson.ingredients.length).toBeGreaterThan(0);
     expect(responseJson.instructions.length).toBeGreaterThan(0);
-    
+
     // Validate schema
     const validatedResponse = recipeSchema.parse(responseJson);
     expect(validatedResponse).toBeDefined();
-    
+
     // Validate metadata
     expect(metadata).toBeDefined();
     expect(metadata.model).toBeTruthy();
@@ -349,19 +337,17 @@ describe("Structured Output", () => {
   });
 
   skipAnthropicTest("should generate structured output with Anthropic using generateReadableStream", async () => {
-    const provider = new AnthropicProvider();
-    
-    // Use the ReadableStream interface
-    const { stream, getMetadata } = provider.generateReadableStream({
+    // Use the factory's ReadableStream interface
+    const { stream, getMetadata } = factory.generateReadableStream({
       model: "claude-3-5-haiku-latest",
       prompt: "Create an event description for a technology conference",
       outputSchema: eventSchema,
     });
-    
+
     // Read from the stream
     const reader = stream.getReader();
     const chunks: string[] = [];
-    
+
     // Process chunks until done
     try {
       while (true) {
@@ -372,16 +358,16 @@ describe("Structured Output", () => {
     } finally {
       reader.releaseLock();
     }
-    
+
     // Get metadata after stream completes
     const metadata = await getMetadata();
-    
+
     // Combine chunks (usually just one for structured output)
     const fullResponse = chunks.join("");
-    
+
     // Parse the JSON response
     const responseJson = JSON.parse(fullResponse);
-    
+
     // Validate the response structure
     expect(responseJson).toHaveProperty("name");
     expect(responseJson).toHaveProperty("date");
@@ -391,7 +377,7 @@ describe("Structured Output", () => {
     expect(responseJson).toHaveProperty("attendees");
     expect(responseJson).toHaveProperty("isVirtual");
     expect(responseJson).toHaveProperty("organizer");
-    
+
     // Validate types
     expect(typeof responseJson.name).toBe("string");
     expect(typeof responseJson.date).toBe("string");
@@ -401,19 +387,19 @@ describe("Structured Output", () => {
     expect(Array.isArray(responseJson.attendees)).toBe(true);
     expect(typeof responseJson.isVirtual).toBe("boolean");
     expect(typeof responseJson.organizer).toBe("string");
-    
+
     // Validate content
     expect(responseJson.name.length).toBeGreaterThan(0);
     expect(responseJson.date.length).toBeGreaterThan(0);
     expect(responseJson.description.length).toBeGreaterThan(10);
-    
+
     // Validate date format (YYYY-MM-DD)
     expect(responseJson.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    
+
     // Validate schema
     const validatedResponse = eventSchema.parse(responseJson);
     expect(validatedResponse).toBeDefined();
-    
+
     // Validate metadata
     expect(metadata).toBeDefined();
     expect(metadata.model).toBeTruthy();
@@ -421,4 +407,4 @@ describe("Structured Output", () => {
     expect(metadata.outputTokens).toBeGreaterThan(0);
     expect(metadata.cost).toBeGreaterThanOrEqual(0);
   });
-}); 
+});

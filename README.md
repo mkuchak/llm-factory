@@ -318,7 +318,7 @@ The library provides a consistent API across all providers:
 | ------------ | -------------------- | ------------------------------------------------------------------ |
 | model        | string               | The model to use (provider-specific)                               |
 | prompt       | string               | The input text prompt                                              |
-| outputSchema | z.ZodType?           | Optional schema for structured output (supported by all providers) |
+| outputSchema | ZodSchema?           | Optional schema for structured output (supported by all providers) |
 | temperature  | number?              | Optional control for randomness (0.0-1.0)                          |
 | maxTokens    | number?              | Optional maximum tokens to generate                                |
 | image        | string? \| string[]? | Optional base64-encoded image(s)                                   |
