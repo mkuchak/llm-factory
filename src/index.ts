@@ -16,7 +16,7 @@ export {
 export { MODEL_PRICING, TokenPricing } from "./constants/pricing";
 
 // Utility functions
-export { calculateCost } from "./utils";
+export { calculateCost, zodToGeminiSchema } from "./utils";
 
 // Provider implementations for advanced use cases
 export {
@@ -26,3 +26,6 @@ export {
   GoogleProvider,
   AnthropicProvider,
 } from "./providers";
+
+// Export zod for schema creation convenience
+export { z } from "zod";

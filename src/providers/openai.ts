@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
 import type { LLMModel } from "../types/models";
 import type { BaseGenerateParams } from "../types/params";
 import { BaseLLMProvider, type TokenMetadata } from "./base";
@@ -123,6 +124,12 @@ export class OpenAIProvider extends BaseLLMProvider {
       requestOptions.modalities = ["text"];
     }
 
+    // Add structured output format if outputSchema is provided
+    if (params.outputSchema) {
+      // Use OpenAI's Zod response format helper
+      requestOptions.response_format = zodResponseFormat(params.outputSchema, "response");
+    }
+
     // Add optional parameters if provided
     if (params.temperature !== undefined) {
       requestOptions.temperature = params.temperature;
@@ -132,8 +139,13 @@ export class OpenAIProvider extends BaseLLMProvider {
       requestOptions.max_tokens = params.maxTokens;
     }
 
-    // Call the API
-    return await this.client!.chat.completions.create(requestOptions);
+    // For structured output, use the parse method instead of create
+    if (params.outputSchema) {
+      return await this.client!.beta.chat.completions.parse(requestOptions);
+    } else {
+      // Call the regular API
+      return await this.client!.chat.completions.create(requestOptions);
+    }
   }
 
   /**
@@ -169,6 +181,12 @@ export class OpenAIProvider extends BaseLLMProvider {
       requestOptions.modalities = ["text"];
     }
 
+    // Add structured output format if outputSchema is provided
+    if (params.outputSchema) {
+      // Use OpenAI's Zod response format helper
+      requestOptions.response_format = zodResponseFormat(params.outputSchema, "response");
+    }
+
     // Add optional parameters if provided
     if (params.temperature !== undefined) {
       requestOptions.temperature = params.temperature;
@@ -178,7 +196,8 @@ export class OpenAIProvider extends BaseLLMProvider {
       requestOptions.max_tokens = params.maxTokens;
     }
 
-    // Call the streaming API
+    // Note: OpenAI doesn't have a streaming parse method yet, so we'll use regular streaming
+    // The response will still be in the correct format
     return await this.client!.chat.completions.create(requestOptions);
   }
 
@@ -186,6 +205,10 @@ export class OpenAIProvider extends BaseLLMProvider {
    * Extract text from API response
    */
   protected extractTextFromResponse(response: any): string {
+    // Handle the special case of structured output (parse result)
+    if (response.response) {
+      return JSON.stringify(response.response);
+    }
     return response.choices[0]?.message?.content || "";
   }
 
@@ -242,6 +265,9 @@ export class OpenAIProvider extends BaseLLMProvider {
    */
   protected async *extractTextChunksFromStream(streamResult: any): AsyncIterable<string> {
     try {
+      let jsonAccumulator = "";
+      let isJsonResponse = false;
+
       // Process OpenAI stream format
       for await (const chunk of streamResult) {
         // Skip the usage chunk (has empty choices array)
@@ -250,8 +276,42 @@ export class OpenAIProvider extends BaseLLMProvider {
         }
 
         const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
+        
+        // Check if this is a JSON response (structured output)
+        if (!isJsonResponse && content && (content.includes('{') || content.includes('['))) {
+          isJsonResponse = true;
+        }
+        
+        if (isJsonResponse) {
+          // For JSON, accumulate all chunks before yielding
+          jsonAccumulator += content;
+          
+          // Try to parse the accumulated JSON to see if it's complete
+          try {
+            JSON.parse(jsonAccumulator);
+            // If we got here, the JSON is valid, so yield the complete JSON
+            yield jsonAccumulator;
+            // Reset for next potential JSON object
+            jsonAccumulator = "";
+            isJsonResponse = false;
+          } catch (e) {
+            // JSON is incomplete, continue accumulating
+            continue;
+          }
+        } else if (content) {
+          // For regular text, yield each chunk as it comes
           yield content;
+        }
+      }
+      
+      // If we have any remaining JSON that didn't get yielded, try one last time
+      if (jsonAccumulator) {
+        try {
+          JSON.parse(jsonAccumulator);
+          yield jsonAccumulator;
+        } catch (e) {
+          // If it's still not valid JSON, yield it as-is
+          yield jsonAccumulator;
         }
       }
     } catch (error) {
@@ -301,6 +361,9 @@ export class OpenAIProvider extends BaseLLMProvider {
    */
   private async *createTextStream(params: BaseGenerateParams): AsyncIterable<string> {
     const streamingResponse = await this.makeStreamingRequest(params);
+    
+    let jsonAccumulator = "";
+    let isJsonResponse = false;
 
     try {
       // Process OpenAI stream format
@@ -311,8 +374,42 @@ export class OpenAIProvider extends BaseLLMProvider {
         }
 
         const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
+        
+        // Check if we're dealing with structured output (JSON)
+        if (!isJsonResponse && content && (content.includes('{') || content.includes('['))) {
+          isJsonResponse = true;
+        }
+        
+        if (isJsonResponse) {
+          // For JSON responses, accumulate until we have valid JSON
+          jsonAccumulator += content;
+          
+          // Check if we have valid complete JSON
+          try {
+            JSON.parse(jsonAccumulator);
+            // If we got here, JSON is valid, so yield the complete object
+            yield jsonAccumulator;
+            // Reset accumulators
+            jsonAccumulator = "";
+            isJsonResponse = false;
+          } catch (e) {
+            // JSON is incomplete, continue accumulating
+            continue;
+          }
+        } else if (content) {
+          // For regular text responses, yield each chunk
           yield content;
+        }
+      }
+      
+      // If we have any remaining JSON that didn't get yielded, try once more
+      if (jsonAccumulator) {
+        try {
+          JSON.parse(jsonAccumulator);
+          yield jsonAccumulator;
+        } catch (e) {
+          // If it's not valid JSON at this point, yield it as-is
+          yield jsonAccumulator;
         }
       }
     } catch (error) {

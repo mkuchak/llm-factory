@@ -1,6 +1,6 @@
 {
   "name": "llm-factory",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A standardized factory for working with multiple LLM providers",
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "test:anthropic": "vitest run src/tests/anthropic-provider.test.ts",
     "test:factory": "vitest run src/tests/llm-factory.test.ts",
     "test:tokens": "vitest run src/tests/tokens.test.ts",
+    "test:strucutred": "vitest run src/tests/structured-output.test.ts",
     "example": "tsx src/examples/basic-usage.ts",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
@@ -49,7 +50,9 @@
     "@anthropic-ai/sdk": "^0.40.0",
     "@google/generative-ai": "^0.24.0",
     "dotenv": "^16.5.0",
-    "openai": "^4.96.0"
+    "openai": "^4.96.0",
+    "zod": "^3.24.3",
+    "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -1,7 +1,8 @@
-import { type GenerationConfig, GoogleGenerativeAI } from "@google/generative-ai";
+import { type GenerationConfig, GoogleGenerativeAI, ResponseSchema } from "@google/generative-ai";
 import type { LLMModel } from "../types/models";
 import type { BaseGenerateParams } from "../types/params";
 import { BaseLLMProvider, type TokenMetadata } from "./base";
+import { zodToGeminiSchema } from "../utils/schema-converter";
 
 /**
  * Google (Gemini) Provider Implementation
@@ -54,6 +55,12 @@ export class GoogleProvider extends BaseLLMProvider {
 
     if (params.maxTokens !== undefined) {
       generationConfig.maxOutputTokens = params.maxTokens;
+    }
+
+    // Add structured output configuration if outputSchema is provided
+    if (params.outputSchema) {
+      generationConfig.responseMimeType = "application/json";
+      generationConfig.responseSchema = zodToGeminiSchema(params.outputSchema) as ResponseSchema;
     }
 
     return this.client!.getGenerativeModel({
@@ -134,6 +141,23 @@ export class GoogleProvider extends BaseLLMProvider {
    * Extract text from API response
    */
   protected extractTextFromResponse(response: any): string {
+    // Check if response is structured (JSON) based on mime type
+    if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
+      try {
+        // First check if already parsed
+        if (typeof response.candidates[0].content.parts[0].text === 'object') {
+          return JSON.stringify(response.candidates[0].content.parts[0].text);
+        }
+        // Try to parse as JSON if it's a string that looks like JSON
+        const text = response.candidates[0].content.parts[0].text;
+        if (typeof text === 'string' && (text.startsWith('{') || text.startsWith('['))) {
+          return text;
+        }
+      } catch (e) {
+        // If parsing fails, fall back to regular text handling
+      }
+    }
+
     // Get text content safely from the response
     return response.text ? (typeof response.text === "function" ? response.text() : response.text) : "";
   }

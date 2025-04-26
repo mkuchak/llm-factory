@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import type { LLMModel } from "../types/models";
 import type { BaseGenerateParams } from "../types/params";
 import type { LLMResponse } from "../types/responses";
@@ -82,22 +84,27 @@ export class AnthropicProvider extends BaseLLMProvider {
 
   /**
    * Make the actual API call to generate content
-   * Note: Since Anthropic only works with streaming, we simulate non-streaming
-   * by collecting all stream chunks into a single response
+   * For structured output, we use tools
    */
   protected async makeGenerationRequest(params: BaseGenerateParams): Promise<any> {
     this.checkClientInitialized();
 
     const model = this.getModelName(params);
     const messages = this.buildContentParts(params);
-
-    // Create the stream
+    
+    // Check if we need to use structured output
+    if (params.outputSchema) {
+      return this.makeStructuredRequest(params, model, messages);
+    }
+    
+    // Create standard request
     const stream = this.client!.messages.stream({
       messages,
       model,
       max_tokens: params.maxTokens || this.DEFAULT_MAX_TOKENS,
       temperature: params.temperature,
     });
+    
     // Get the final message which includes usage information
     const finalMessage = await stream.finalMessage();
 
@@ -107,13 +114,87 @@ export class AnthropicProvider extends BaseLLMProvider {
       model,
     };
   }
+  
+  /**
+   * Make a request for structured output using tools
+   */
+  private async makeStructuredRequest(params: BaseGenerateParams, model: string, messages: any[]): Promise<any> {
+    // Convert Zod schema to JSON Schema
+    const jsonSchema = zodToJsonSchema(params.outputSchema as z.ZodType, "schema");
+    const schemaDefinition = jsonSchema.definitions?.schema;
+    
+    if (!schemaDefinition) {
+      throw new Error("Failed to generate JSON schema for provided schema.");
+    }
+    
+    // Define tool for structured output
+    const tools = [
+      {
+        name: "json",
+        description: "Respond with a JSON object according to the schema.",
+        input_schema: schemaDefinition as Anthropic.Tool.InputSchema,
+      },
+    ];
+    
+    // Request with tool use
+    const response = await this.client!.messages.create({
+      model,
+      messages,
+      max_tokens: params.maxTokens || this.DEFAULT_MAX_TOKENS,
+      temperature: params.temperature || 0.7,
+      tools,
+      tool_choice: { name: "json", type: "tool" },
+    });
+    
+    // Handle structured output response
+    const toolUseContent = response.content.find(c => c.type === "tool_use");
+    
+    if (!toolUseContent || toolUseContent.type !== "tool_use") {
+      throw new Error("Unexpected response from Anthropic API: No tool_use content returned.");
+    }
+    
+    // Return a format that's compatible with our existing handler
+    return {
+      content: JSON.stringify(toolUseContent.input),
+      usage: response.usage || { input_tokens: 0, output_tokens: 0 },
+      model,
+    };
+  }
 
   /**
    * Make the actual API call to generate streaming content
    */
   protected async makeStreamingRequest(params: BaseGenerateParams): Promise<any> {
     this.checkClientInitialized();
-
+    
+    // For structured output with streaming, we'll do the same as
+    // non-streaming and then manually stream the result
+    if (params.outputSchema) {
+      const structuredResponse = await this.makeStructuredRequest(
+        params, 
+        this.getModelName(params), 
+        this.buildContentParts(params)
+      );
+      
+      // Create an object that mimics the stream interface but just returns our JSON content
+      return {
+        on: (event: string, callback: any) => {
+          if (event === "text") {
+            // For structured output, we return the entire JSON as a single chunk
+            callback(structuredResponse.content);
+          } else if (event === "end") {
+            // Call the end callback immediately afterward
+            setTimeout(() => callback(), 0);
+          }
+          // Ignore other events
+        },
+        finalMessage: async () => ({
+          content: [{ type: "text", text: structuredResponse.content }],
+          usage: structuredResponse.usage,
+        }),
+      };
+    }
+    
     const model = this.getModelName(params);
     const messages = this.buildContentParts(params);
 
@@ -238,11 +319,49 @@ export class AnthropicProvider extends BaseLLMProvider {
     this.checkClientInitialized();
 
     const modelName = this.getModelName(params);
-    const messages = this.buildContentParts(params);
 
-    // Create the stream
+    // For structured output, create a special stream
+    if (params.outputSchema) {
+      // Create a Promise that will resolve to the structured output
+      const structuredPromise = this.makeStructuredRequest(
+        params, 
+        modelName, 
+        this.buildContentParts(params)
+      );
+
+      // Create an AsyncIterable that will yield the JSON string
+      const stream: AsyncIterable<string> = {
+        [Symbol.asyncIterator]() {
+          let yielded = false;
+          return {
+            async next() {
+              if (yielded) {
+                return { value: undefined, done: true };
+              }
+              try {
+                const result = await structuredPromise;
+                yielded = true;
+                return { value: result.content, done: false };
+              } catch (error) {
+                throw error;
+              }
+            }
+          };
+        }
+      };
+
+      // Create a function to get metadata
+      const getMetadata = async () => {
+        const result = await structuredPromise;
+        return this.extractMetadataFromResponse(result, modelName);
+      };
+
+      return { stream, getMetadata };
+    }
+
+    // For normal streaming, use the event-based approach
     const streamResult = this.client!.messages.stream({
-      messages,
+      messages: this.buildContentParts(params),
       model: modelName,
       max_tokens: params.maxTokens || this.DEFAULT_MAX_TOKENS,
       temperature: params.temperature,
@@ -275,9 +394,34 @@ export class AnthropicProvider extends BaseLLMProvider {
 
     const { onChunk, onComplete, onError } = params;
     const modelName = this.getModelName(params);
-    const messages = this.buildContentParts(params);
-
+    
     try {
+      // For structured output, handle it differently
+      if (params.outputSchema) {
+        const structuredResponse = await this.makeStructuredRequest(
+          params, 
+          modelName, 
+          this.buildContentParts(params)
+        );
+        
+        // Call onChunk with the full JSON
+        if (onChunk) {
+          onChunk(structuredResponse.content);
+        }
+        
+        // Call onComplete with the full response
+        if (onComplete) {
+          const metadata = this.extractMetadataFromResponse(structuredResponse, modelName);
+          onComplete({
+            text: structuredResponse.content,
+            metadata,
+          });
+        }
+        
+        return;
+      }
+      
+      const messages = this.buildContentParts(params);
       // Approach 1: Use stream like in the non-streaming API but collect chunks
       const accumulatedContent: string[] = [];
 
