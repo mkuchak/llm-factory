@@ -307,7 +307,7 @@ LLM Factory provides a unified interface for structured output across all suppor
 
 This unified approach means you can switch between providers without changing your code structure or schema definitions.
 
-#### Model Fallback and Retry Support
+### Model Fallback and Retry Support
 
 All generation methods support model fallback and configurable retries:
 
@@ -328,12 +328,6 @@ const response = await llmFactory.generate({
 // The response.metadata.model will contain the model that successfully generated the response
 console.log(`Generated with model: ${response.metadata.model}`);
 ```
-
-This functionality is available for all generation methods:
-- `generate()`
-- `generateStream()`
-- `generateWithCallbacks()`
-- `generateReadableStream()`
 
 ## API Reference
 

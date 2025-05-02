@@ -60,6 +60,7 @@ export class OpenAIProvider extends BaseLLMProvider {
           type: "image_url",
           image_url: {
             url: `data:image/jpeg;base64,${image}`,
+            detail: "high",
           },
         });
       }
