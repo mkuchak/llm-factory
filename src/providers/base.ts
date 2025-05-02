@@ -140,7 +140,11 @@ export abstract class BaseLLMProvider implements LLMProviderInterface {
    * Get model name from params or use default
    */
   protected getModelName(params: BaseGenerateParams): string {
-    return params.model || this.DEFAULT_MODEL;
+    const model = params.model;
+    if (Array.isArray(model)) {
+      return model.length > 0 ? model[0] : this.DEFAULT_MODEL;
+    }
+    return model || this.DEFAULT_MODEL;
   }
 
   /**

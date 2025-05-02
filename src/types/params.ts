@@ -6,8 +6,9 @@ import type { ZodSchema } from "zod";
  * Base parameters for all generation methods
  */
 export interface BaseGenerateParams {
-  model: LLMModel;
+  model: LLMModel | LLMModel[];
   prompt: string;
+  retries?: number; // Number of retry attempts per model, defaults to 3
   outputSchema?: ZodSchema<any>; // Schema for structured output (Zod schema)
   temperature?: number;
   maxTokens?: number;

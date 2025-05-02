@@ -307,6 +307,34 @@ LLM Factory provides a unified interface for structured output across all suppor
 
 This unified approach means you can switch between providers without changing your code structure or schema definitions.
 
+#### Model Fallback and Retry Support
+
+All generation methods support model fallback and configurable retries:
+
+```typescript
+// Single model with default retries (3)
+const response = await llmFactory.generate({
+  model: "gpt-4o-mini",
+  prompt: "Your prompt"
+});
+
+// Multiple models with custom retries
+const response = await llmFactory.generate({
+  model: ["gpt-4o-mini", "gemini-2.0-flash", "claude-3-5-sonnet-latest"],
+  prompt: "Your prompt",
+  retries: 2 // Each model will be tried up to 2 times before moving to the next
+});
+
+// The response.metadata.model will contain the model that successfully generated the response
+console.log(`Generated with model: ${response.metadata.model}`);
+```
+
+This functionality is available for all generation methods:
+- `generate()`
+- `generateStream()`
+- `generateWithCallbacks()`
+- `generateReadableStream()`
+
 ## API Reference
 
 The library provides a consistent API across all providers:
