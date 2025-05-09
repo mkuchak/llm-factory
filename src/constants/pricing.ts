@@ -55,7 +55,7 @@ export const MODEL_PRICING: Record<LLMModel, TokenPricing> = {
     inputTokens: 0.15,
     outputTokens: 0.6,
   },
-  "gemini-2.5-pro-preview-03-25": {
+  "gemini-2.5-pro-preview-05-06": {
     tieredPricing: {
       input: {
         threshold: 200_000,
