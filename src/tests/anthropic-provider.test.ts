@@ -12,7 +12,8 @@ const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 const skipTest = hasApiKey ? it : it;
 
 // Sample files
-const IMAGE_SAMPLE_PATH = path.resolve(__dirname, "../../samples/image_sample.jpg");
+const IMAGE_JPG_SAMPLE_PATH = path.resolve(__dirname, "../../samples/image_sample.jpg");
+const IMAGE_PNG_SAMPLE_PATH = path.resolve(__dirname, "../../samples/image_sample.png");
 
 describe("AnthropicProvider", () => {
   let provider: AnthropicProvider;
@@ -138,13 +139,13 @@ describe("AnthropicProvider", () => {
 
   skipTest("should perform OCR on an image correctly", async () => {
     // Check if the sample file exists
-    if (!fs.existsSync(IMAGE_SAMPLE_PATH)) {
-      console.log(`Skipping test: OCR sample file not found at ${IMAGE_SAMPLE_PATH}`);
+    if (!fs.existsSync(IMAGE_JPG_SAMPLE_PATH)) {
+      console.log(`Skipping test: OCR sample file not found at ${IMAGE_JPG_SAMPLE_PATH}`);
       return;
     }
 
     // Read the image file as base64
-    const imageBase64 = fs.readFileSync(IMAGE_SAMPLE_PATH, { encoding: "base64" });
+    const imageBase64 = fs.readFileSync(IMAGE_JPG_SAMPLE_PATH, { encoding: "base64" });
 
     // Generate response with image
     const response = await provider.generate({
@@ -160,6 +161,36 @@ describe("AnthropicProvider", () => {
     // Assertions
     expect(response.text).toBeTruthy();
     expect(response.text.length).toBeGreaterThan(50); // Should extract substantial text
+    expect(response.metadata).toBeDefined();
+    expect(response.metadata.model).toBe("claude-3-7-sonnet-latest");
+    expect(response.metadata.inputTokens).toBeGreaterThanOrEqual(0);
+    expect(response.metadata.outputTokens).toBeGreaterThanOrEqual(0);
+    expect(response.metadata.cost).toBeGreaterThanOrEqual(0);
+  });
+
+  skipTest("should perform OCR on a PNG image with auto media type detection", async () => {
+    // Check if the sample file exists
+    if (!fs.existsSync(IMAGE_PNG_SAMPLE_PATH)) {
+      console.log(`Skipping test: PNG sample file not found at ${IMAGE_PNG_SAMPLE_PATH}`);
+      return;
+    }
+
+    // Read the PNG image file as base64
+    const pngImageBase64 = fs.readFileSync(IMAGE_PNG_SAMPLE_PATH, { encoding: "base64" });
+
+    // Generate response with PNG image
+    const response = await provider.generate({
+      model: "claude-3-7-sonnet-latest",
+      prompt: "Extract all text visible in this image. Format the text exactly as it appears.",
+      image: pngImageBase64,
+      temperature: 0.2,
+    });
+
+    console.log("PNG OCR result:", `${response.text.substring(0, 300)}...`);
+    console.log("PNG OCR metadata:", response.metadata);
+
+    // Assertions
+    expect(response.text).toBeTruthy();
     expect(response.metadata).toBeDefined();
     expect(response.metadata.model).toBe("claude-3-7-sonnet-latest");
     expect(response.metadata.inputTokens).toBeGreaterThanOrEqual(0);

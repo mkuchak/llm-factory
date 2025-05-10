@@ -58,11 +58,14 @@ export class AnthropicProvider extends BaseLLMProvider {
     if (params.image) {
       const images = Array.isArray(params.image) ? params.image : [params.image];
       for (const image of images) {
+        // Detect image type from base64 data
+        const mediaType = this.detectImageMediaType(image);
+        
         content.push({
           type: "image",
           source: {
             type: "base64",
-            media_type: "image/jpeg",
+            media_type: mediaType,
             data: image,
           },
         });
@@ -79,6 +82,65 @@ export class AnthropicProvider extends BaseLLMProvider {
 
     // Otherwise, return the multimodal format
     return [{ role: "user", content }];
+  }
+
+  /**
+   * Detect image media type from base64 data
+   * @param base64Data Base64 encoded image data
+   * @returns The detected MIME type (defaults to image/jpeg if detection fails)
+   */
+  private detectImageMediaType(base64Data: string): string {
+    // Remove potential data URL prefix to get just the base64 data
+    const base64 = base64Data.split(";base64,").pop() || base64Data;
+    
+    // Check the first few bytes of the image data to determine the format
+    // This is more reliable than relying on prefixes in the original string
+    try {
+      // Decode a small sample of the base64 data
+      const binaryData = atob(base64.substring(0, 32));
+      
+      // Convert to array of byte values
+      const bytes = new Uint8Array(binaryData.length);
+      for (let i = 0; i < binaryData.length; i++) {
+        bytes[i] = binaryData.charCodeAt(i);
+      }
+      
+      // Check magic numbers for common image formats
+      // JPEG: Starts with ff d8 ff
+      if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+        return "image/jpeg";
+      }
+      // PNG: Starts with 89 50 4E 47
+      else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+        return "image/png";
+      }
+      // GIF: Starts with 47 49 46 38
+      else if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+        return "image/gif";
+      }
+      // WEBP: Has "WEBP" at byte offset 8
+      else if (bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+        return "image/webp";
+      }
+      // AVIF: Has "avif" at byte offset 8 or 4
+      else if ((bytes[8] === 0x61 && bytes[9] === 0x76 && bytes[10] === 0x69 && bytes[11] === 0x66) || 
+               (bytes[4] === 0x61 && bytes[5] === 0x76 && bytes[6] === 0x69 && bytes[7] === 0x66)) {
+        return "image/avif";
+      }
+      // BMP: Starts with 42 4D
+      else if (bytes[0] === 0x42 && bytes[1] === 0x4D) {
+        return "image/bmp";
+      }
+      // SVG: Look for "svg" in the first few bytes if it's XML (starts with "<")
+      else if (bytes[0] === 0x3C && binaryData.toLowerCase().includes("svg")) {
+        return "image/svg+xml";
+      }
+    } catch (error) {
+      console.warn("Error detecting image media type:", error);
+    }
+    
+    // Default to image/jpeg if we couldn't detect the format
+    return "image/jpeg";
   }
 
   /**
