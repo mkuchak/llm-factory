@@ -1,6 +1,6 @@
 {
   "name": "llm-factory",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "A standardized factory for working with multiple LLM providers",
   "repository": {
     "type": "git",
